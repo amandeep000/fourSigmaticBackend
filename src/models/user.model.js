@@ -4,16 +4,17 @@ import bcrypt from "bcryptjs";
 
 const userSchema = new mongoose.Schema(
   {
-    name: {
+    username: {
       type: String,
-      required: [true, "User name is required"],
+      required: true,
       trim: true,
       minlength: 3,
       maxlength: 50,
+      index: true,
     },
     email: {
       type: String,
-      required: [true, "Email is required"],
+      required: true,
       unique: true,
       lowercase: true,
     },
@@ -23,28 +24,26 @@ const userSchema = new mongoose.Schema(
       minlength: 6,
       select: false, // important for security
     },
-    role: {
+    fullname: {
       type: String,
-      enum: ["user", "admin"],
-      default: "user",
+      require: true,
+      lowercase: true,
+      trim: true,
+      index: true,
+    },
+    avatar: {
+      type: String,
+      required: true, // cloudinary string or uploadthing
+    },
+    coverImage: {
+      type: String,
+      required: true,
     },
     refreshToken: {
       type: String, // stored in secure cookie or DB
     },
-    authProvider: {
-      type: String,
-      enum: ["local", "google", "github"],
-      default: "local",
-    },
-    isVerified: {
-      type: Boolean,
-      default: false,
-    },
-    passwordChangedAt: Date,
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
 
 userSchema.pre("save", async function (next) {
