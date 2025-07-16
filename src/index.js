@@ -3,14 +3,6 @@ dotenv.config();
 import { app } from "./app.js";
 import { connectDB } from "./db/index.js";
 
-console.log("CLOUDINARY ENV CHECK", {
-  node_environment: process.env.NODE_ENV,
-  mongodbURI: process.env.MONGODB_URI,
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
-
 const PORT = process.env.PORT || 8000;
 
 connectDB()
@@ -22,3 +14,10 @@ connectDB()
   .catch((error) => {
     console.log("something went wrong while connecting to MongDb!");
   });
+
+// to test if the variable are imported from env by dotenv
+// console.log("CLOUDINARY ENV CHECK", {
+//   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+//   api_key: process.env.CLOUDINARY_API_KEY,
+//   api_secret: process.env.CLOUDINARY_API_SECRET,
+// });
