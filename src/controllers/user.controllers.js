@@ -7,6 +7,31 @@ import {
 } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 
+const createAccessAndRefreshToken = async (userId) => {
+  try {
+    const user = await User.findById(userId);
+    // check if user exists
+    if (!user) {
+      throw new ApiError(400, "User does not exist!");
+    }
+
+    const accessToken = user.generateAccessToken();
+    const refreshToken = user.generateRefreshToken();
+
+    user.refreshToken = refreshToken;
+    await user.save({ validateBeforeSave: false });
+    return { accessToken, refreshToken };
+  } catch (error) {
+    if (process.env.NODE_ENV === "development") {
+      console.error("token generation error", error);
+    }
+    throw new ApiError(
+      500,
+      "Something went wrong while generating access and refresh tokens"
+    );
+  }
+};
+
 const registerUser = asyncHandler(async (req, res) => {
   if (!req.body || Object.keys(req.body).length === 0) {
     throw new ApiError(400, "req body cannot be empty");
@@ -85,4 +110,51 @@ const registerUser = asyncHandler(async (req, res) => {
   }
 });
 
-export { registerUser };
+const loginUser = async (req, res) => {
+  // get data from body
+  const { email, password } = req.body;
+  // validation
+  if (!email) {
+    throw new ApiError(400, "Email is required");
+  }
+  if (!password) {
+    throw new ApiError(400, "password is required");
+  }
+  // check for if user exists
+  const user = await User.findOne({ email: email });
+  if (!user) {
+    throw new ApiError(404, "User not found!");
+  }
+
+  // validate password
+  const isPasswordValid = await user.isPasswordCorrect(password);
+  if (!isPasswordValid) {
+    throw new ApiError(401, "Password doesn't match");
+  }
+
+  const { accessToken, refreshToken } = await createAccessAndRefreshToken(
+    user._id
+  );
+  // so we are getting the user document again because we want the updated user as the createuserAccandrefreshtken is adding refresh token and it is an inefficent approach but it is a fail safe approach.
+
+  const loggedInUser = User.findById(user._id).select(
+    "-password -refreshToken"
+  );
+  if (!loggedInUser) {
+    console.error(
+      `[Auth Error] User authenticated (id: ${user._id}) but not found during final fetch`
+    );
+    throw new ApiError(404, "Loggedin user not found");
+  }
+  const options = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+  };
+
+  return res
+    .status(200)
+    .cookie("accessToken", accessToken, options)
+    .cookie("refershToken", refreshToken, options)
+    .json(new ApiResponse(200, loggedInUser, "user logged in successfully"));
+};
+export { registerUser, loginUser };
