@@ -33,7 +33,7 @@ const uploadOnCloudinary = async (localFilePath) => {
       console.error("Upload response is invalid:", response);
       return null;
     }
-    console.log(response);
+    console.log(response.url);
     return response;
   } catch (error) {
     console.error("cloudinary upload failed", error);
