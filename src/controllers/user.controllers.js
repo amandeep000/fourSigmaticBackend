@@ -7,7 +7,6 @@ import {
   deleteFromCloudinary,
 } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
-import { verifyJWT } from "../middlewares/auth.middlewares.js";
 
 const createAccessAndRefreshToken = async (userId) => {
   try {
@@ -123,7 +122,7 @@ const loginUser = asyncHandler(async (req, res) => {
     throw new ApiError(400, "password is required");
   }
   // check for if user exists
-  const user = await User.findOne({ email: email });
+  const user = await User.findOne({ email: email }).select("+password");
   if (!user) {
     throw new ApiError(404, "User not found!");
   }
@@ -142,6 +141,7 @@ const loginUser = asyncHandler(async (req, res) => {
   const loggedInUser = User.findById(user._id).select(
     "-password -refreshToken"
   );
+  // .lean();  research about this method which converts it to plain js object
   if (!loggedInUser) {
     console.error(
       `[Auth Error] User authenticated (id: ${user._id}) but not found during final fetch`
@@ -157,7 +157,7 @@ const loginUser = asyncHandler(async (req, res) => {
     .status(200)
     .cookie("accessToken", accessToken, options)
     .cookie("refershToken", refreshToken, options)
-    .json(new ApiResponse(200, loggedInUser, "user logged in successfully"));
+    .json(new ApiResponse(200, "user logged in successfully"));
 });
 
 const logoutUser = asyncHandler(async (req, res) => {
